@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>Meteor Shower with Canvas</title>
+    <style>
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 65vh;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas"></canvas>
+    <script>
+        class Meteor {
+    constructor(gridSize, canvas) {
+        this.gridSize = gridSize;
+        this.canvas = canvas;
+        this.reset();
+    }
+
+    reset() {
+        this.direction = Math.floor(4 * Math.random());
+        this.speed = 2 + 3 * Math.random();
+        this.length = this.gridSize * (1 + 2 * Math.random());
+        this.opacity = 0.6 + 0.4 * Math.random();
+
+        const e = (max) => 0.2 * max + 0.6 * max * Math.random();
+        switch (this.direction) {
+            case 0:
+                this.x = Math.floor(e(this.canvas.width) / this.gridSize) * this.gridSize;
+                this.y = this.canvas.height;
+                break;
+            case 1:
+                this.x = 0;
+                this.y = Math.floor(e(this.canvas.height) / this.gridSize) * this.gridSize;
+                break;
+            case 2:
+                this.x = Math.floor(e(this.canvas.width) / this.gridSize) * this.gridSize;
+                this.y = 0;
+                break;
+            case 3:
+                this.x = this.canvas.width;
+                this.y = Math.floor(e(this.canvas.height) / this.gridSize) * this.gridSize;
+                break;
+        }
+    }
+
+    update() {
+        switch (this.direction) {
+            case 0:
+                this.y -= this.speed;
+                if (this.y + this.length < 0) this.reset();
+                break;
+            case 1:
+                this.x += this.speed;
+                if (this.x > this.canvas.width) this.reset();
+                break;
+            case 2:
+                this.y += this.speed;
+                if (this.y > this.canvas.height) this.reset();
+                break;
+            case 3:
+                this.x -= this.speed;
+                if (this.x + this.length < 0) this.reset();
+                break;
+        }
+    }
+
+    draw(ctx) {
+        let startX = this.x;
+        let startY = this.y;
+        let endX = this.x;
+        let endY = this.y;
+
+        switch (this.direction) {
+            case 0:
+                endY = this.y + this.length;
+                break;
+            case 1:
+                endX = this.x - this.length;
+                break;
+            case 2:
+                endY = this.y - this.length;
+                break;
+            case 3:
+                endX = this.x + this.length;
+                break;
+        }
+
+        const gradient = ctx.createLinearGradient(startX, startY, endX, endY);
+        gradient.addColorStop(0, `rgba(18, 229, 229, ${this.opacity})`);
+        gradient.addColorStop(0.02, `rgba(18, 229, 229, ${0.8 * this.opacity})`);
+        gradient.addColorStop(0.05, `rgba(255, 53, 26, ${0.6 * this.opacity})`);
+        gradient.addColorStop(1, `rgba(255, 53, 26, 0)`);
+
+        ctx.beginPath();
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 2;
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+    }
+}
+
+function initMeteorShower() {
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext('2d');
+    const gridSize = 30;
+    const meteorCount = 20;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = 0.65 * window.innerHeight;
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const meteors = Array.from({ length: meteorCount }, () => new Meteor(gridSize, canvas));
+
+    function drawGrid() {
+        ctx.strokeStyle = 'rgba(128, 128, 128, 0.1)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+        meteors.forEach(meteor => {
+            meteor.update();
+            meteor.draw(ctx);
+        });
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+}
+
+initMeteorShower();
+</script>
+</body>
+</html>
